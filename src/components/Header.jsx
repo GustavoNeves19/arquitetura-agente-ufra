@@ -1,6 +1,12 @@
 import { Bot, Code2, Leaf, Sparkles, Zap } from 'lucide-react'
 
-export default function Header({ mode, setMode, hasApiKey }) {
+function apiTooltip(apiStatus, hasApiKey) {
+  if (hasApiKey) return 'OpenAI conectada com sucesso'
+  if (apiStatus?.keyConfigured) return apiStatus.lastError || 'Chave configurada, mas a conexao ainda nao foi validada'
+  return 'Adicione OPENAI_API_KEY no ambiente do servidor'
+}
+
+export default function Header({ mode, setMode, hasApiKey, apiStatus }) {
   return (
     <header className="sticky top-0 z-50 border-b border-accent-cyan/10 bg-white/80 backdrop-blur-xl">
       <div className="mx-auto flex max-w-5xl flex-col gap-4 px-4 py-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between">
@@ -51,11 +57,11 @@ export default function Header({ mode, setMode, hasApiKey }) {
                   ? 'bg-accent-cyan text-white shadow-sm shadow-accent-cyan/20'
                   : 'text-slate-500 hover:text-accent-cyan'
               }`}
-              title={!hasApiKey ? 'Adicione VITE_OPENAI_API_KEY no .env' : ''}
+              title={apiTooltip(apiStatus, hasApiKey)}
             >
               <Zap size={13} />
               LLM
-              {!hasApiKey && <span className="text-[10px] font-medium opacity-75">(sem key)</span>}
+              {!hasApiKey && <span className="text-[10px] font-medium opacity-75">(indisponivel)</span>}
             </button>
           </div>
         </div>
