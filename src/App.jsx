@@ -5,9 +5,8 @@ import AgentBlueprint from './components/AgentBlueprint'
 import ExplainBlock from './components/ExplainBlock'
 import LLMvsAgentBlock from './components/LLMvsAgentBlock'
 import NextStepsBlock from './components/NextStepsBlock'
-import AuditPanel from './components/AuditPanel'
 import { generateAgent } from './lib/generateAgent'
-import { generateAgentWithLLM, getApiStatus, getAuditTrail } from './lib/apiGenerate'
+import { generateAgentWithLLM, getApiStatus } from './lib/apiGenerate'
 
 const INITIAL_API_STATUS = {
   apiAvailable: false,
@@ -24,17 +23,10 @@ export default function App() {
   const [error, setError] = useState(null)
   const [mode, setMode] = useState('template')
   const [apiStatus, setApiStatus] = useState(INITIAL_API_STATUS)
-  const [auditEvents, setAuditEvents] = useState([])
 
-  async function refreshAuditData() {
-    const [status, audit] = await Promise.all([
-      getApiStatus(),
-      getAuditTrail(),
-    ])
-
+  async function refreshApiStatus() {
+    const status = await getApiStatus()
     setApiStatus(status)
-    setAuditEvents(audit.events || [])
-
     return status
   }
 
@@ -43,7 +35,7 @@ export default function App() {
 
     async function loadBackendState() {
       try {
-        const status = await refreshAuditData()
+        const status = await refreshApiStatus()
         if (isMounted && status.apiAvailable) {
           setMode('api')
         }
@@ -74,9 +66,11 @@ export default function App() {
       if (mode === 'api') {
         try {
           data = await generateAgentWithLLM(text)
+          await refreshApiStatus()
         } catch (apiErr) {
           console.warn('API falhou, usando templates:', apiErr.message)
           data = generateAgent(text)
+          await refreshApiStatus().catch(() => {})
         }
       } else {
         await new Promise(r => setTimeout(r, 800))
@@ -84,13 +78,6 @@ export default function App() {
       }
 
       setResult(data)
-
-      try {
-        await refreshAuditData()
-      } catch (auditError) {
-        console.warn('Nao foi possivel atualizar a auditoria:', auditError.message)
-      }
-
       setTimeout(() => {
         document.getElementById('result-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
       }, 100)
@@ -132,10 +119,6 @@ export default function App() {
           hasResult={Boolean(result)}
           onReset={handleReset}
         />
-
-        <div className="mt-6">
-          <AuditPanel apiStatus={apiStatus} auditEvents={auditEvents} />
-        </div>
 
         {error && (
           <div className="mt-6 rounded-3xl border border-red-200 bg-white px-5 py-4 text-sm text-red-700 shadow-sm animate-fade-in">

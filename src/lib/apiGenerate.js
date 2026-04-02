@@ -14,16 +14,6 @@ export async function getApiStatus() {
   return response.json()
 }
 
-export async function getAuditTrail() {
-  const response = await fetch('/api/audit')
-
-  if (!response.ok) {
-    throw new Error('Nao foi possivel consultar a auditoria')
-  }
-
-  return response.json()
-}
-
 export async function generateAgentWithLLM(userInput) {
   const response = await fetch('/api/generate', {
     method: 'POST',
